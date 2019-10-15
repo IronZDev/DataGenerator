@@ -1,34 +1,40 @@
 import random
 import PySimpleGUI as sg
+import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from sklearn.datasets.samples_generator import make_blobs
 
 
 # Calculating gaussian distribution
 def calculate_gaussian(size=1000, number_of_clusters=3, mean_min=-10.0, mean_max=10.0, std_deviation_min=0.5,
                        std_deviation_max=2.0):
     # Generate random clasters in 2d
-    centers = []
-    std = []
-    for cluster in range(number_of_clusters):
-        centers.append([random.uniform(mean_min, mean_max), random.uniform(mean_min, mean_max)])
-        std.append(random.uniform(std_deviation_min, std_deviation_max))
-
-    x, y = make_blobs(size, centers=centers, n_features=2, cluster_std=std)
-    # Assign a color to each cluster
     colorsAvailable = ['r', 'g', 'b', 'c', 'k', 'y', 'm']
+    points = [[], []]
     c = []
-    for i in y:
-        c.append(colorsAvailable[i])
-    return x, c
+    for cluster in range(number_of_clusters):
+        center = [random.uniform(mean_min, mean_max), random.uniform(mean_min, mean_max)]
+        x, y = np.random.multivariate_normal(center,
+                                             [[random.uniform(std_deviation_min, std_deviation_max), 0],
+                                              [0, random.uniform(std_deviation_min, std_deviation_max)]],
+                                             size).T
+        points[0].append(x)
+        points[1].append(y)
+        # Assign a color to each cluster
+        c.extend([colorsAvailable[cluster] for i in range(size)])
+
+    print(points)
+
+    # x, y = make_blobs(size, centers=centers, n_features=2, cluster_std=std)
+
+    return points, c
 
 
 # Generating plot
 def generate_plot(x, c):
-    plt.scatter(x[:, 0], x[:, 1], c=c)
+    plt.scatter(x[0], x[1], c=c)
     plt.xlabel('X axis')
     plt.ylabel('Y axis')
     return plt.gcf()
@@ -99,7 +105,7 @@ column2 = [
     [sg.In(default_text='10.0', key='maxVal', size=(4, 1))],
     [sg.In(default_text='0.5', key='minDeviation', size=(4, 1))],
     [sg.In(default_text='2.0', key='maxDeviation', size=(4, 1))],
-    [sg.Spin([i for i in range(100, 100000, 100)], initial_value=1000, key='size', size=(5, 1))],
+    [sg.Spin([i for i in range(100, 100000, 100)], initial_value=100, key='size', size=(5, 1))],
     [sg.Spin([i for i in range(1, 8)], initial_value=3, key='clustersNum', size=(1, 1))],
     [sg.Exit(size=(8, 1))]
 ]
@@ -126,7 +132,7 @@ while True:
                                       float(values['maxDeviation']))
             if 'fig_canvas_agg' in globals():  # Update if plot already exists
                 plt.clf()
-                plt.scatter(points[:, 0], points[:, 1], c=colors)
+                plt.scatter(points[0], points[1], c=colors)
                 fig_canvas_agg.draw()
             else:  # Generate new plot
                 fig = generate_plot(points, colors)
